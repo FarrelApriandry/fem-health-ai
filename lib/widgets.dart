@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'models.dart';
+import 'dart:typed_data';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 const Color _emerald = Color(0xFF10B981);
 
@@ -1313,35 +1316,184 @@ class _ObGynReportModalState extends State<ObGynReportModal> {
   String _downloading = 'idle';
   bool _sharing = false;
 
-  void _exportPdf() {
+  Future<void> _exportPdf() async {
     setState(() {
       _downloading = 'exporting';
     });
-    Timer(const Duration(milliseconds: 1500), () {
+
+    try {
+      final fileName = _getReportFileName();
+      final pdfBytes = await _buildReportPdf();
+
+      await Printing.sharePdf(bytes: pdfBytes, filename: fileName);
+
+      if (!mounted) return;
+
       setState(() {
         _downloading = 'done';
       });
-      Timer(const Duration(milliseconds: 600), () {
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Export Complete'),
+          content: Text(
+            'PDF report has been generated successfully.\n\nFile name:\n$fileName',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Export Failed'),
+          content: Text('Failed to generate PDF: $e'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      if (mounted) {
         setState(() {
           _downloading = 'idle';
         });
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Export Complete'),
-            content: const Text(
-              'PDF Exported Successfully!\nSaved inside "FemHealth_Report_Sarah_Jenkins.pdf"',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
+      }
+    }
+  }
+
+  String _getReportFileName() {
+    final rawName = widget.userProfile.fullName.trim().isNotEmpty
+        ? widget.userProfile.fullName.trim()
+        : widget.userProfile.name.trim().isNotEmpty
+        ? widget.userProfile.name.trim()
+        : 'User';
+
+    final safeName = rawName
+        .replaceAll(RegExp(r'[^a-zA-Z0-9]+'), '_')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'^_|_$'), '');
+
+    return 'FemHealth_Report_$safeName.pdf';
+  }
+
+  Future<Uint8List> _buildReportPdf() async {
+    final pdf = pw.Document();
+
+    final profile = widget.userProfile;
+
+    final displayName = profile.fullName.trim().isNotEmpty
+        ? profile.fullName.trim()
+        : profile.name.trim().isNotEmpty
+        ? profile.name.trim()
+        : 'Not set';
+
+    final dob = profile.dob.trim().isNotEmpty ? profile.dob.trim() : 'Not set';
+    final email = profile.email.trim().isNotEmpty
+        ? profile.email.trim()
+        : 'Not set';
+
+    final height = profile.height > 0
+        ? '${profile.height.toInt()} cm'
+        : 'Not set';
+    final weight = profile.weight > 0
+        ? '${profile.weight.toInt()} kg'
+        : 'Not set';
+    final cycleLength = profile.cycleLength > 0
+        ? '${profile.cycleLength} days'
+        : 'Not set';
+    final periodLength = profile.periodLength > 0
+        ? '${profile.periodLength} days'
+        : 'Not set';
+    final lastPeriod = profile.lastPeriodStart.trim().isNotEmpty
+        ? profile.lastPeriodStart.trim()
+        : 'Not set';
+
+    pdf.addPage(
+      pw.Page(
+        build: (context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                'FemHealth OB-GYN Report',
+                style: pw.TextStyle(
+                  fontSize: 24,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 8),
+              pw.Text('Generated for healthcare consultation.'),
+              pw.SizedBox(height: 24),
+
+              pw.Text(
+                'Patient Profile',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 12),
+
+              _buildPdfRow('Name', displayName),
+              _buildPdfRow('Date of Birth', dob),
+              _buildPdfRow('Email', email),
+              _buildPdfRow('Height', height),
+              _buildPdfRow('Weight', weight),
+              _buildPdfRow('Last Period Started', lastPeriod),
+              _buildPdfRow('Cycle Length', cycleLength),
+              _buildPdfRow('Period Length', periodLength),
+
+              pw.SizedBox(height: 24),
+
+              pw.Text(
+                'Clinical Summary',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 12),
+              pw.Text(
+                'This report summarizes the user profile and cycle-related information recorded in FemHealth. Additional symptom, mood, hydration, and sleep logs can be included in future report versions.',
               ),
             ],
+          );
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  pw.Widget _buildPdfRow(String label, String value) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 8),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.SizedBox(
+            width: 140,
+            child: pw.Text(
+              label,
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            ),
           ),
-        );
-      });
-    });
+          pw.Expanded(child: pw.Text(value)),
+        ],
+      ),
+    );
   }
 
   void _shareReport() {
