@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models.dart';
 
 class FemHealthProvider extends ChangeNotifier {
@@ -183,5 +184,129 @@ class FemHealthProvider extends ChangeNotifier {
 
   DailyLog getLogForDate(String date) {
     return _dailyLogs[date] ?? DailyLog(date: date);
+  }
+
+  /// Login user via Supabase Auth.
+  /// Returns error message string if failed, or null on success.
+  Future<String?> loginWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final client = Supabase.instance.client;
+      final response = await client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      if (response.user != null) {
+        await _loadProfileFromSupabase(response.user!.id);
+        _isOnboarded = true;
+        _isLocked = false;
+        notifyListeners();
+        return null;
+      }
+      return 'Login failed. Please check your credentials and try again.';
+    } on AuthException catch (e) {
+      return e.message;
+    } catch (e) {
+      return 'An unexpected error occurred: $e';
+    }
+  }
+
+  /// Register new user via Supabase Auth and upsert profile row.
+  /// Returns error message string if failed, or null on success.
+  Future<String?> registerWithEmail({
+    required String email,
+    required String password,
+    required String name,
+    required String fullName,
+    required String dob,
+    required double height,
+    required double weight,
+    required String lastPeriodStart,
+    required int cycleLength,
+    required int periodLength,
+  }) async {
+    try {
+      final client = Supabase.instance.client;
+      final response = await client.auth.signUp(
+        email: email,
+        password: password,
+        data: {
+          'name': name,
+          'full_name': fullName,
+        },
+      );
+
+      if (response.user != null) {
+        final userId = response.user!.id;
+
+        await client.from('profiles').upsert({
+          'id': userId,
+          'name': name,
+          'full_name': fullName,
+          'email': email,
+          'dob': dob,
+          'height': height,
+          'weight': weight,
+          'last_period_start': lastPeriodStart,
+          'cycle_length': cycleLength,
+          'period_length': periodLength,
+        });
+
+        _profile = UserProfile(
+          name: name,
+          fullName: fullName,
+          email: email,
+          dob: dob,
+          height: height,
+          weight: weight,
+          lastPeriodStart: lastPeriodStart,
+          cycleLength: cycleLength,
+          periodLength: periodLength,
+        );
+
+        _isOnboarded = true;
+        _isLocked = false;
+        await _saveToStorage();
+        notifyListeners();
+        return null;
+      }
+      return 'Registration failed. Please try again.';
+    } on AuthException catch (e) {
+      return e.message;
+    } catch (e) {
+      return 'An unexpected error occurred: $e';
+    }
+  }
+
+  Future<void> _loadProfileFromSupabase(String userId) async {
+    try {
+      final client = Supabase.instance.client;
+      final data = await client
+          .from('profiles')
+          .select()
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (data == null) return;
+
+      _profile = UserProfile(
+        name: data['name'] ?? '',
+        fullName: data['full_name'] ?? '',
+        email: data['email'] ?? '',
+        dob: data['dob'] ?? '',
+        height: (data['height'] ?? 0).toDouble(),
+        weight: (data['weight'] ?? 0).toDouble(),
+        lastPeriodStart: data['last_period_start'] ?? '',
+        cycleLength: data['cycle_length'] ?? 0,
+        periodLength: data['period_length'] ?? 0,
+      );
+
+      await _saveToStorage();
+    } catch (e) {
+      debugPrint('Error loading profile from Supabase: $e');
+    }
   }
 }

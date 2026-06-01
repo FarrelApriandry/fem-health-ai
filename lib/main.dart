@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'providers/fem_health_provider.dart';
 import 'pin_lock_screen.dart';
@@ -13,7 +14,17 @@ import 'widgets/sleep_logger_widget.dart';
 import 'widgets/obgyn_report_pdf.dart';
 import 'widgets/settings_widgets.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'https://mpqteprqsvnjbhfnecoz.supabase.co',
+    anonKey: const String.fromEnvironment(
+      'SUPABASE_ANON_KEY',
+      defaultValue: 'YOUR_SUPABASE_ANON_KEY',
+    ),
+  );
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => FemHealthProvider(),
