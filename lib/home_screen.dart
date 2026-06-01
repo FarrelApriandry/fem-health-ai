@@ -98,11 +98,6 @@ class HomeDashboard extends StatelessWidget {
         ? todayLog!.mood![0].toUpperCase() + todayLog!.mood!.substring(1)
         : 'Happy';
 
-    final symptomsList =
-        todayLog?.symptoms != null && todayLog!.symptoms.isNotEmpty
-        ? todayLog!.symptoms.join(', ')
-        : 'None logged';
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20.0),
       child: Column(
@@ -378,14 +373,6 @@ class HomeDashboard extends StatelessWidget {
               _buildQuickWorkspaceItem(
                 context,
                 'symptoms',
-                Colors.pink.withValues(alpha: 0.05),
-                colors.primary,
-                Icons.calendar_today,
-                'Period',
-              ),
-              _buildQuickWorkspaceItem(
-                context,
-                'symptoms',
                 Colors.purple.withValues(alpha: 0.05),
                 colors.primary,
                 Icons.favorite_border,
@@ -393,7 +380,7 @@ class HomeDashboard extends StatelessWidget {
               ),
               _buildQuickWorkspaceItem(
                 context,
-                'symptoms',
+                'mood',
                 Colors.amber.withValues(alpha: 0.05),
                 Colors.amber,
                 Icons.sentiment_satisfied,
@@ -436,14 +423,7 @@ class HomeDashboard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1.3,
+          Column(
             children: [
               _buildSummaryCard(
                 context,
@@ -455,6 +435,7 @@ class HomeDashboard extends StatelessWidget {
                 desc: 'Optimal Rest',
                 descColor: const Color(0xFF10B981),
               ),
+              const SizedBox(height: 16),
               _buildSummaryCard(
                 context,
                 type: 'hydration',
@@ -464,6 +445,7 @@ class HomeDashboard extends StatelessWidget {
                 value: waterDisplay,
                 customWidget: _buildWaterProgressBars(waterAmount),
               ),
+              const SizedBox(height: 16),
               _buildSummaryCard(
                 context,
                 type: 'symptoms',
@@ -474,16 +456,7 @@ class HomeDashboard extends StatelessWidget {
                 desc: 'Logged Today',
                 descColor: Colors.grey,
               ),
-              _buildSummaryCard(
-                context,
-                type: 'symptoms',
-                icon: Icons.favorite,
-                iconColor: colors.primary,
-                title: 'Symptoms',
-                value: symptomsList,
-                desc: 'Click to edit',
-                descColor: Colors.grey,
-              ),
+              const SizedBox(height: 16),
             ],
           ),
           const SizedBox(height: 24),

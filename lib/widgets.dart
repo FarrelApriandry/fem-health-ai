@@ -90,10 +90,11 @@ class SymptomLoggerModal extends StatefulWidget {
 }
 
 class _SymptomLoggerModalState extends State<SymptomLoggerModal> {
-  late String _mood;
   late List<String> _symptoms;
+  late String _mood;
   late double _severity;
   late TextEditingController _notesController;
+  String _selectedCategory = 'Physical';
 
   final List<Map<String, String>> _moods = [
     {'type': 'terrible', 'emoji': '😫', 'label': 'Terrible'},
@@ -134,8 +135,8 @@ class _SymptomLoggerModalState extends State<SymptomLoggerModal> {
   @override
   void initState() {
     super.initState();
-    _mood = widget.initialMood;
     _symptoms = List.from(widget.initialSymptoms);
+    _mood = widget.initialMood;
     _severity = widget.initialSeverity.toDouble();
     _notesController = TextEditingController(text: widget.initialNotes);
   }
@@ -202,82 +203,58 @@ class _SymptomLoggerModalState extends State<SymptomLoggerModal> {
                   ),
                   const SizedBox(height: 24),
 
-                  const Text(
-                    'How are you feeling?',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ChoiceChip(
+                          label: const Text('Physical'),
+                          selected: _selectedCategory == 'Physical',
+                          onSelected: (_) {
+                            setState(() {
+                              _selectedCategory = 'Physical';
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ChoiceChip(
+                          label: const Text('Emotional'),
+                          selected: _selectedCategory == 'Emotional',
+                          onSelected: (_) {
+                            setState(() {
+                              _selectedCategory = 'Emotional';
+                            });
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: _moods.map((m) {
-                        final isSelected = _mood == m['type'];
-                        return GestureDetector(
-                          onTap: () => setState(() => _mood = m['type']!),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
-                            margin: const EdgeInsets.only(right: 8.0),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? colors.primary.withValues(alpha: 0.08)
-                                  : Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isSelected
-                                    ? colors.primary
-                                    : Colors.grey.withValues(alpha: 0.2),
-                              ),
-                            ),
-                            child: Column(
-                              children: [
-                                Text(
-                                  m['emoji']!,
-                                  style: const TextStyle(fontSize: 24),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  m['label']!,
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }).toList(),
+                  const SizedBox(height: 20),
+
+                  if (_selectedCategory == 'Physical')
+                    _buildSymptomCategory(
+                      'Physical',
+                      Icons.bolt,
+                      colors.primary,
+                      _physicalList,
                     ),
-                  ),
-                  const SizedBox(height: 24),
 
-                  _buildSymptomCategory(
-                    'Physical',
-                    Icons.bolt,
-                    colors.primary,
-                    _physicalList,
-                  ),
-                  const SizedBox(height: 24),
+                  if (_selectedCategory == 'Emotional')
+                    _buildSymptomCategory(
+                      'Emotional',
+                      Icons.favorite_border,
+                      colors.secondary,
+                      _emotionalList,
+                    ),
 
-                  _buildSymptomCategory(
-                    'Emotional',
-                    Icons.favorite_border,
-                    colors.secondary,
-                    _emotionalList,
-                  ),
-                  const SizedBox(height: 24),
-
-                  _buildSymptomCategory(
-                    'Lifestyle',
-                    Icons.star_border,
-                    colors.tertiary,
-                    _lifestyleList,
-                  ),
-                  const SizedBox(height: 24),
+                  if (_selectedCategory == 'Lifestyle')
+                    _buildSymptomCategory(
+                      'Lifestyle',
+                      Icons.wb_sunny,
+                      Colors.orange,
+                      _lifestyleList,
+                    ),
 
                   Container(
                     padding: const EdgeInsets.all(16),
