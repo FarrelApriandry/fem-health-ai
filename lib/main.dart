@@ -1,273 +1,86 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import 'models.dart';
+import 'providers/fem_health_provider.dart';
 import 'pin_lock_screen.dart';
 import 'onboarding_screen.dart';
 import 'home_screen.dart';
 import 'calendar_screen.dart';
 import 'chat_screen.dart';
-import 'widgets.dart';
+import 'widgets/symptom_logger_modal.dart';
+import 'widgets/hydration_tracker_widget.dart';
+import 'widgets/sleep_logger_widget.dart';
+import 'widgets/obgyn_report_pdf.dart';
+import 'widgets/settings_widgets.dart';
 
 void main() {
-  runApp(const FemHealthApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => FemHealthProvider(),
+      child: const FemHealthApp(),
+    ),
+  );
 }
 
-class FemHealthApp extends StatefulWidget {
+class FemHealthApp extends StatelessWidget {
   const FemHealthApp({super.key});
 
   @override
-  State<FemHealthApp> createState() => _FemHealthAppState();
-}
-
-class _FemHealthAppState extends State<FemHealthApp> {
-  String _activeTab = 'home';
-  bool _isOnboarded = false;
-  bool _isLocked = true;
-  String _selectedDate = '2023-10-14';
-
-  late UserProfile _profile;
-  late AppSettings _settings;
-  late NotificationSettings _notifications;
-  late Map<String, DailyLog> _dailyLogs;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _profile = UserProfile();
-    _settings = AppSettings();
-    _notifications = NotificationSettings();
-
-    _dailyLogs = {
-      '2023-10-04': DailyLog(
-        date: '2023-10-04',
-        mood: 'okay',
-        symptoms: ['Cramps', 'Fatigue'],
-        severity: 4,
-        personalNotes:
-            'Period started. Felt standard abdominal cramping and overall slowness.',
-        sleep: SleepLog(
-          startTime: '22:30',
-          endTime: '06:45',
-          quality: 'good',
-          totalMinutes: 495,
-        ),
-        hydrationLogs: [
-          HydrationLog(id: '1', amount: 500, time: '08:00 AM', type: 'Water'),
-        ],
-      ),
-    };
-  }
-
-  void _onUnlock() {
-    setState(() {
-      _isLocked = false;
-    });
-  }
-
-  void _onOnboardingComplete(UserProfile newProfile) {
-    setState(() {
-      _profile = newProfile;
-      _isOnboarded = true;
-      _isLocked = false;
-    });
-  }
-
-  void _onUpdateSettings(AppSettings app, NotificationSettings notify) {
-    setState(() {
-      _settings = app;
-      _notifications = notify;
-    });
-  }
-
-  void _onUpdateProfile(UserProfile newProfile) {
-    setState(() {
-      _profile = newProfile;
-    });
-  }
-
-  void _onResetWizard() {
-    setState(() {
-      _profile = UserProfile();
-      _settings = AppSettings(pinLockEnabled: false);
-      _notifications = NotificationSettings();
-      _dailyLogs = {};
-      _isOnboarded = false;
-      _isLocked = false;
-      _activeTab = 'home';
-    });
-  }
-
-  void _saveSymptomLog(
-    String date,
-    String mood,
-    List<String> symptoms,
-    int severity,
-    String notes,
-  ) {
-    setState(() {
-      final existing = _dailyLogs[date];
-
-      if (existing != null) {
-        _dailyLogs[date] = existing.copyWith(
-          mood: mood,
-          symptoms: symptoms,
-          severity: severity,
-          personalNotes: notes,
-        );
-      } else {
-        _dailyLogs[date] = DailyLog(
-          date: date,
-          mood: mood,
-          symptoms: symptoms,
-          severity: severity,
-          personalNotes: notes,
-        );
-      }
-    });
-  }
-
-  void _saveHydrationLog(String date, List<HydrationLog> logs, int goal) {
-    setState(() {
-      final existing = _dailyLogs[date];
-
-      if (existing != null) {
-        _dailyLogs[date] = existing.copyWith(
-          hydrationLogs: logs,
-          hydrationGoal: goal,
-        );
-      } else {
-        _dailyLogs[date] = DailyLog(
-          date: date,
-          hydrationLogs: logs,
-          hydrationGoal: goal,
-        );
-      }
-    });
-  }
-
-  void _saveSleepLog(String date, SleepLog sleep) {
-    setState(() {
-      final existing = _dailyLogs[date];
-
-      if (existing != null) {
-        _dailyLogs[date] = existing.copyWith(sleep: sleep);
-      } else {
-        _dailyLogs[date] = DailyLog(date: date, sleep: sleep);
-      }
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final isDark = _settings.theme == 'dark';
+    return Consumer<FemHealthProvider>(
+      builder: (context, provider, _) {
+        final isDark = provider.settings.theme == 'dark';
 
-    final themeData = ThemeData(
-      useMaterial3: true,
-      colorScheme: ColorScheme(
-        brightness: isDark ? Brightness.dark : Brightness.light,
-        primary: const Color(0xFFAC2A5D),
-        onPrimary: Colors.white,
-        primaryContainer: const Color(0xFFFF6B9D),
-        onPrimaryContainer: const Color(0xFF6E0035),
-        secondary: const Color(0xFF665978),
-        onSecondary: Colors.white,
-        secondaryContainer: const Color(0xFFEAD9FE),
-        onSecondaryContainer: const Color(0xFF6A5D7C),
-        tertiary: const Color(0xFF865136),
-        onTertiary: Colors.white,
-        tertiaryContainer: const Color(0xFFCF8F6F),
-        onTertiaryContainer: Colors.black,
-        error: Colors.redAccent,
-        onError: Colors.white,
-        surface: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-        onSurface: isDark ? Colors.white : const Color(0xFF09090B),
-        shadow: Colors.black.withValues(alpha: 0.08),
-      ),
-      scaffoldBackgroundColor: isDark
-          ? const Color(0xFF121212)
-          : const Color(0xFFFAFAFA),
-    );
+        final themeData = ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme(
+            brightness: isDark ? Brightness.dark : Brightness.light,
+            primary: const Color(0xFFAC2A5D),
+            onPrimary: Colors.white,
+            primaryContainer: const Color(0xFFFF6B9D),
+            onPrimaryContainer: const Color(0xFF6E0035),
+            secondary: const Color(0xFF665978),
+            onSecondary: Colors.white,
+            secondaryContainer: const Color(0xFFEAD9FE),
+            onSecondaryContainer: const Color(0xFF6A5D7C),
+            tertiary: const Color(0xFF865136),
+            onTertiary: Colors.white,
+            tertiaryContainer: const Color(0xFFCF8F6F),
+            onTertiaryContainer: Colors.black,
+            error: Colors.redAccent,
+            onError: Colors.white,
+            surface: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+            onSurface: isDark ? Colors.white : const Color(0xFF09090B),
+            shadow: Colors.black.withValues(alpha: 0.08),
+          ),
+          scaffoldBackgroundColor: isDark
+              ? const Color(0xFF121212)
+              : const Color(0xFFFAFAFA),
+        );
 
-    Widget activeScreen;
+        Widget activeScreen;
 
-    if (!_isOnboarded) {
-      activeScreen = OnboardingScreen(onComplete: _onOnboardingComplete);
-    } else if (_isLocked && _settings.pinLockEnabled) {
-      activeScreen = PINLockScreen(
-        correctPin: _settings.pinCode,
-        onUnlock: _onUnlock,
-        biometricsEnabled: _settings.biometricsEnabled,
-      );
-    } else {
-      activeScreen = MainFrame(
-        activeTab: _activeTab,
-        onTabChanged: (tab) {
-          setState(() {
-            _activeTab = tab;
-          });
-        },
-        profile: _profile,
-        dailyLogs: _dailyLogs,
-        settings: _settings,
-        notifications: _notifications,
-        selectedDate: _selectedDate,
-        onSelectDate: (date) {
-          setState(() {
-            _selectedDate = date;
-          });
-        },
-        onUpdateSettings: _onUpdateSettings,
-        onResetWizard: _onResetWizard,
-        onSaveSymptomLog: _saveSymptomLog,
-        onSaveHydrationLog: _saveHydrationLog,
-        onSaveSleepLog: _saveSleepLog,
-        onUpdateProfile: _onUpdateProfile,
-      );
-    }
+        if (!provider.isOnboarded) {
+          activeScreen = const OnboardingScreen();
+        } else if (provider.isLocked && provider.settings.pinLockEnabled) {
+          activeScreen = const PINLockScreen();
+        } else {
+          activeScreen = const MainFrame();
+        }
 
-    return MaterialApp(
-      title: 'FemHealth',
-      debugShowCheckedModeBanner: false,
-      theme: themeData,
-      home: activeScreen,
+        return MaterialApp(
+          title: 'FemHealth',
+          debugShowCheckedModeBanner: false,
+          theme: themeData,
+          home: activeScreen,
+        );
+      },
     );
   }
 }
 
 class MainFrame extends StatelessWidget {
-  final String activeTab;
-  final ValueChanged<String> onTabChanged;
-  final UserProfile profile;
-  final Map<String, DailyLog> dailyLogs;
-  final AppSettings settings;
-  final NotificationSettings notifications;
-  final String selectedDate;
-  final ValueChanged<String> onSelectDate;
-  final Function(AppSettings, NotificationSettings) onUpdateSettings;
-  final VoidCallback onResetWizard;
-  final Function(String, String, List<String>, int, String) onSaveSymptomLog;
-  final Function(String, List<HydrationLog>, int) onSaveHydrationLog;
-  final Function(String, SleepLog) onSaveSleepLog;
-  final Function(UserProfile) onUpdateProfile;
-
-  const MainFrame({
-    super.key,
-    required this.activeTab,
-    required this.onTabChanged,
-    required this.profile,
-    required this.dailyLogs,
-    required this.settings,
-    required this.notifications,
-    required this.selectedDate,
-    required this.onSelectDate,
-    required this.onUpdateSettings,
-    required this.onResetWizard,
-    required this.onSaveSymptomLog,
-    required this.onSaveHydrationLog,
-    required this.onSaveSleepLog,
-    required this.onUpdateProfile,
-  });
+  const MainFrame({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -296,23 +109,21 @@ class MainFrame extends StatelessWidget {
   }
 
   Widget _buildActiveScreen(BuildContext context) {
-    final todayLog = dailyLogs['2023-10-14'];
+    final provider = context.watch<FemHealthProvider>();
+    final activeTab = provider.activeTab;
 
     switch (activeTab) {
       case 'home':
         return HomeDashboard(
-          profile: profile,
-          settings: settings,
-          todayLog: todayLog,
           onOpenLogger: (type) => _openLogger(context, type),
-          onNotifyTrigger: () => onTabChanged('profile'),
+          onNotifyTrigger: () => provider.setActiveTab('profile'),
           onMenuTrigger: () {
             showDialog(
               context: context,
               builder: (context) => AlertDialog(
                 title: const Text('FemHealth Info'),
                 content: Text(
-                  'FemHealth Tracker\nRegistered: ${profile.fullName}',
+                  'FemHealth Tracker\nRegistered: ${provider.profile.fullName}',
                 ),
                 actions: [
                   TextButton(
@@ -326,34 +137,16 @@ class MainFrame extends StatelessWidget {
         );
 
       case 'calendar':
-        return CalendarView(
-          profile: profile,
-          dailyLogs: dailyLogs,
-          selectedDate: selectedDate,
-          onSelectDate: onSelectDate,
-          onOpenSymptomLogger: (date) {
-            _openLogger(context, 'symptoms', customDate: date);
-          },
-        );
+        return const CalendarView();
 
       case 'chat':
-        return ChatScreen(name: profile.name);
+        return const ChatScreen();
 
       case 'insights':
-        return InsightsView(
-          profile: profile,
-          onOpenReport: () => _openObGynReport(context),
-        );
+        return const InsightsView();
 
       case 'profile':
-        return ProfileView(
-          profile: profile,
-          settings: settings,
-          notifications: notifications,
-          onUpdateSettings: onUpdateSettings,
-          onResetSetup: onResetWizard,
-          onUpdateProfile: onUpdateProfile,
-        );
+        return const ProfileView();
 
       default:
         return const SizedBox();
@@ -395,11 +188,12 @@ class MainFrame extends StatelessWidget {
     String label,
   ) {
     final colors = Theme.of(context).colorScheme;
-    final active = activeTab == tab;
+    final provider = context.read<FemHealthProvider>();
+    final active = provider.activeTab == tab;
 
     return GestureDetector(
       onTap: () {
-        onTabChanged(tab);
+        provider.setActiveTab(tab);
       },
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -432,8 +226,8 @@ class MainFrame extends StatelessWidget {
   }
 
   void _openLogger(BuildContext context, String type, {String? customDate}) {
-    final date = customDate ?? selectedDate;
-    final log = dailyLogs[date] ?? DailyLog(date: date);
+    final provider = context.read<FemHealthProvider>();
+    final date = customDate ?? provider.selectedDate;
 
     showModalBottomSheet(
       context: context,
@@ -441,46 +235,12 @@ class MainFrame extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (context) {
         if (type == 'symptoms') {
-          return SymptomLoggerModal(
-            dateStr: date,
-            initialMood: log.mood ?? 'okay',
-            initialSymptoms: log.symptoms,
-            initialSeverity: log.severity,
-            initialNotes: log.personalNotes,
-            onSave: (dateStr, mood, symptoms, severity, notes) {
-              onSaveSymptomLog(dateStr, mood, symptoms, severity, notes);
-              Navigator.pop(context);
-            },
-          );
+          return SymptomLoggerModal(dateStr: date);
         } else if (type == 'hydration') {
-          return HydrationLoggerModal(
-            initialLogs: log.hydrationLogs ?? [],
-            initialGoal: log.hydrationGoal,
-            onSave: (logs, goal) {
-              onSaveHydrationLog(date, logs, goal);
-              Navigator.pop(context);
-            },
-          );
+          return const HydrationLoggerModal();
         } else {
-          return SleepLoggerModal(
-            initialSleep: log.sleep,
-            onSave: (sleepLog) {
-              onSaveSleepLog(date, sleepLog);
-              Navigator.pop(context);
-            },
-          );
+          return const SleepLoggerModal();
         }
-      },
-    );
-  }
-
-  void _openObGynReport(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return ObGynReportModal(userProfile: profile);
       },
     );
   }

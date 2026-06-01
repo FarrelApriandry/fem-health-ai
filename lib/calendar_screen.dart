@@ -1,21 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'models.dart';
+import 'providers/fem_health_provider.dart';
+import 'widgets/symptom_logger_modal.dart';
 
 class CalendarView extends StatefulWidget {
-  final UserProfile profile;
-  final Map<String, DailyLog> dailyLogs;
-  final String selectedDate;
-  final ValueChanged<String> onSelectDate;
-  final Function(String) onOpenSymptomLogger;
-
-  const CalendarView({
-    super.key,
-    required this.profile,
-    required this.dailyLogs,
-    required this.selectedDate,
-    required this.onSelectDate,
-    required this.onOpenSymptomLogger,
-  });
+  const CalendarView({super.key});
 
   @override
   State<CalendarView> createState() => _CalendarViewState();
@@ -29,20 +19,18 @@ class _CalendarViewState extends State<CalendarView> {
   @override
   void initState() {
     super.initState();
-    _parseSelectedDate();
+    _parseSelectedDate(context.read<FemHealthProvider>().selectedDate);
   }
 
   @override
-  void didUpdateWidget(CalendarView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.selectedDate != widget.selectedDate) {
-      _parseSelectedDate();
-    }
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _parseSelectedDate(context.read<FemHealthProvider>().selectedDate);
   }
 
-  void _parseSelectedDate() {
+  void _parseSelectedDate(String dateStr) {
     try {
-      final parts = widget.selectedDate.split('-');
+      final parts = dateStr.split('-');
       if (parts.length == 3) {
         _year = int.parse(parts[0]);
         _month = int.parse(parts[1]);
@@ -56,6 +44,7 @@ class _CalendarViewState extends State<CalendarView> {
   }
 
   void _changeMonth(int offset) {
+    final provider = context.read<FemHealthProvider>();
     setState(() {
       _month += offset;
       if (_month < 1) {
@@ -70,7 +59,7 @@ class _CalendarViewState extends State<CalendarView> {
         _selectedDay = daysInNewMonth;
       }
       final dateStr = '$_year-${_month.toString().padLeft(2, '0')}-${_selectedDay.toString().padLeft(2, '0')}';
-      widget.onSelectDate(dateStr);
+      provider.setSelectedDate(dateStr);
     });
   }
 
@@ -85,51 +74,51 @@ class _CalendarViewState extends State<CalendarView> {
     return 'OCTOBER';
   }
 
-  bool _isPeriodDay(int day) {
+  bool _isPeriodDay(int day, UserProfile profile) {
     final date = DateTime(_year, _month, day);
-    final lastPeriod = DateTime.tryParse(widget.profile.lastPeriodStart) ?? DateTime(2023, 10, 4);
+    final lastPeriod = DateTime.tryParse(profile.lastPeriodStart) ?? DateTime(2023, 10, 4);
     final difference = date.difference(lastPeriod).inDays;
-    int cycleDay = difference % widget.profile.cycleLength;
-    if (cycleDay < 0) cycleDay += widget.profile.cycleLength;
-    return cycleDay >= 0 && cycleDay < widget.profile.periodLength;
+    int cycleDay = difference % profile.cycleLength;
+    if (cycleDay < 0) cycleDay += profile.cycleLength;
+    return cycleDay >= 0 && cycleDay < profile.periodLength;
   }
 
-  bool _isOvulationDay(int day) {
+  bool _isOvulationDay(int day, UserProfile profile) {
     final date = DateTime(_year, _month, day);
-    final lastPeriod = DateTime.tryParse(widget.profile.lastPeriodStart) ?? DateTime(2023, 10, 4);
+    final lastPeriod = DateTime.tryParse(profile.lastPeriodStart) ?? DateTime(2023, 10, 4);
     final difference = date.difference(lastPeriod).inDays;
-    int cycleDay = difference % widget.profile.cycleLength;
-    if (cycleDay < 0) cycleDay += widget.profile.cycleLength;
-    final ovulationDay = widget.profile.cycleLength - 14;
+    int cycleDay = difference % profile.cycleLength;
+    if (cycleDay < 0) cycleDay += profile.cycleLength;
+    final ovulationDay = profile.cycleLength - 14;
     return cycleDay == ovulationDay;
   }
 
-  bool _isFertilityDay(int day) {
+  bool _isFertilityDay(int day, UserProfile profile) {
     final date = DateTime(_year, _month, day);
-    final lastPeriod = DateTime.tryParse(widget.profile.lastPeriodStart) ?? DateTime(2023, 10, 4);
+    final lastPeriod = DateTime.tryParse(profile.lastPeriodStart) ?? DateTime(2023, 10, 4);
     final difference = date.difference(lastPeriod).inDays;
-    int cycleDay = difference % widget.profile.cycleLength;
-    if (cycleDay < 0) cycleDay += widget.profile.cycleLength;
-    final ovulationDay = widget.profile.cycleLength - 14;
+    int cycleDay = difference % profile.cycleLength;
+    if (cycleDay < 0) cycleDay += profile.cycleLength;
+    final ovulationDay = profile.cycleLength - 14;
     return cycleDay >= ovulationDay - 5 && cycleDay < ovulationDay;
   }
 
-  String _getDayStatus(int day) {
+  String _getDayStatus(int day, UserProfile profile) {
     final monthName = _getMonthName(_month);
     final shortMonth = monthName.substring(0, 3);
     final displayMonth = '${shortMonth[0]}${shortMonth.substring(1).toLowerCase()}';
     
     if (day == _selectedDay) {
-      if (_isOvulationDay(day)) return '$displayMonth $day - Predicted Ovulation';
-      if (_isPeriodDay(day)) {
-        final lastPeriod = DateTime.tryParse(widget.profile.lastPeriodStart) ?? DateTime(2023, 10, 4);
+      if (_isOvulationDay(day, profile)) return '$displayMonth $day - Predicted Ovulation';
+      if (_isPeriodDay(day, profile)) {
+        final lastPeriod = DateTime.tryParse(profile.lastPeriodStart) ?? DateTime(2023, 10, 4);
         final date = DateTime(_year, _month, day);
         final difference = date.difference(lastPeriod).inDays;
-        int cycleDay = difference % widget.profile.cycleLength;
-        if (cycleDay < 0) cycleDay += widget.profile.cycleLength;
+        int cycleDay = difference % profile.cycleLength;
+        if (cycleDay < 0) cycleDay += profile.cycleLength;
         return '$displayMonth $day - Day ${cycleDay + 1} of Period';
       }
-      if (_isFertilityDay(day)) return '$displayMonth $day - Fertile Window';
+      if (_isFertilityDay(day, profile)) return '$displayMonth $day - Fertile Window';
       return '$displayMonth $day - Follicular Phase';
     }
     return '';
@@ -138,9 +127,12 @@ class _CalendarViewState extends State<CalendarView> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final provider = context.watch<FemHealthProvider>();
+    final profile = provider.profile;
+    final dailyLogs = provider.dailyLogs;
     final monthStr = _month.toString().padLeft(2, '0');
     final dateStr = '$_year-$monthStr-${_selectedDay.toString().padLeft(2, '0')}';
-    final mockLog = widget.dailyLogs[dateStr];
+    final mockLog = dailyLogs[dateStr];
     final daysInMonth = DateUtils.getDaysInMonth(_year, _month);
 
     return SingleChildScrollView(
@@ -221,9 +213,9 @@ class _CalendarViewState extends State<CalendarView> {
                   itemBuilder: (context, index) {
                     final day = index + 1;
                     final isSelected = _selectedDay == day;
-                    final isPeriod = _isPeriodDay(day);
-                    final isFertility = _isFertilityDay(day);
-                    final isOvulation = _isOvulationDay(day);
+                    final isPeriod = _isPeriodDay(day, profile);
+                    final isFertility = _isFertilityDay(day, profile);
+                    final isOvulation = _isOvulationDay(day, profile);
 
                     Color bg = Colors.transparent;
                     Color textCol = colors.onSurface;
@@ -245,7 +237,7 @@ class _CalendarViewState extends State<CalendarView> {
                     }
 
                     final hasLog =
-                        widget.dailyLogs['$_year-$monthStr-${day.toString().padLeft(2, '0')}'] !=
+                        dailyLogs['$_year-$monthStr-${day.toString().padLeft(2, '0')}'] !=
                         null;
 
                     return GestureDetector(
@@ -253,7 +245,7 @@ class _CalendarViewState extends State<CalendarView> {
                         setState(() {
                           _selectedDay = day;
                         });
-                        widget.onSelectDate(
+                        provider.setSelectedDate(
                           '$_year-$monthStr-${day.toString().padLeft(2, '0')}',
                         );
                       },
@@ -351,8 +343,8 @@ class _CalendarViewState extends State<CalendarView> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            _getDayStatus(_selectedDay).isNotEmpty
-                                ? _getDayStatus(_selectedDay)
+                            _getDayStatus(_selectedDay, profile).isNotEmpty
+                                ? _getDayStatus(_selectedDay, profile)
                                 : '${_getMonthName(_month)} $_selectedDay, $_year',
                             style: const TextStyle(
                               fontSize: 16,
@@ -364,7 +356,14 @@ class _CalendarViewState extends State<CalendarView> {
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton(
-                      onPressed: () => widget.onOpenSymptomLogger(dateStr),
+                      onPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) => SymptomLoggerModal(dateStr: dateStr),
+                        );
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
                         foregroundColor: Colors.white,
@@ -505,24 +504,6 @@ class _CalendarViewState extends State<CalendarView> {
               ),
             ),
           ],
-        ],
-      );
-    } else if (_isOvulationDay(_selectedDay)) {
-      return const Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.auto_awesome, color: Colors.pink, size: 16),
-          SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Today is your predicted ovulation day. You have a significantly high chance of conception. Safe-sex measures are recommended unless seeking conception.',
-              style: TextStyle(
-                fontSize: 12,
-                height: 1.4,
-                color: Color(0xFF865136),
-              ),
-            ),
-          ),
         ],
       );
     } else {

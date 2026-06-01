@@ -1,29 +1,25 @@
 import 'dart:math' as math;
 import 'package:fem_health/app_strings.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'models.dart';
+import 'providers/fem_health_provider.dart';
 
 class HomeDashboard extends StatelessWidget {
-  final UserProfile profile;
-  final DailyLog? todayLog;
   final Function(String) onOpenLogger;
   final VoidCallback onNotifyTrigger;
   final VoidCallback onMenuTrigger;
-  final AppSettings settings;
 
   const HomeDashboard({
     super.key,
-    required this.profile,
-    required this.todayLog,
     required this.onOpenLogger,
     required this.onNotifyTrigger,
     required this.onMenuTrigger,
-    required this.settings,
   });
+
   String tr(String key) {
-    return settings.language == AppLanguage.indonesia
-        ? AppStrings.id[key] ?? key
-        : AppStrings.en[key] ?? key;
+    // Will be resolved from provider in build
+    return key;
   }
 
   int _calculateCycleDay(UserProfile profile) {
@@ -76,6 +72,19 @@ class HomeDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final provider = context.watch<FemHealthProvider>();
+    final profile = provider.profile;
+    final settings = provider.settings;
+    final todayLog = provider.getLogForDate('2023-10-14');
+
+    final lang = settings.language == AppLanguage.indonesia
+        ? AppStrings.id
+        : AppStrings.en;
+
+    String tr(String key) {
+      return lang[key] ?? key;
+    }
+
     final hasCycleData =
         profile.lastPeriodStart.isNotEmpty &&
         profile.cycleLength > 0 &&
@@ -91,20 +100,20 @@ class HomeDashboard extends StatelessWidget {
         ? _getCyclePhase(profile, currentCycleDay)
         : 'Complete your cycle profile';
 
-    final sleepDisplay = todayLog?.sleep != null
-        ? '${todayLog!.sleep!.totalMinutes ~/ 60}h ${todayLog!.sleep!.totalMinutes % 60}m'
+    final sleepDisplay = todayLog.sleep != null
+        ? '${todayLog.sleep!.totalMinutes ~/ 60}h ${todayLog.sleep!.totalMinutes % 60}m'
         : '7h 30m';
 
-    final waterAmount = todayLog?.hydrationLogs != null
-        ? todayLog!.hydrationLogs!.fold<int>(
+    final waterAmount = todayLog.hydrationLogs != null
+        ? todayLog.hydrationLogs!.fold<int>(
             0,
             (sum, item) => sum + item.amount,
           )
         : 1500;
     final waterDisplay = '${(waterAmount / 1000).toStringAsFixed(1)}L';
 
-    final moodDisplay = todayLog?.mood != null
-        ? todayLog!.mood![0].toUpperCase() + todayLog!.mood!.substring(1)
+    final moodDisplay = todayLog.mood != null
+        ? todayLog.mood![0].toUpperCase() + todayLog.mood!.substring(1)
         : 'Happy';
 
     return SingleChildScrollView(
@@ -368,7 +377,7 @@ class HomeDashboard extends StatelessWidget {
           const SizedBox(height: 20),
 
           Text(
-            tr('QUICK WORKSPACES'),
+            tr('quickWorkspaces'),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w800,
@@ -385,7 +394,7 @@ class HomeDashboard extends StatelessWidget {
                 Colors.purple.withValues(alpha: 0.05),
                 colors.primary,
                 Icons.favorite_border,
-                tr('Symptoms'),
+                tr('symptoms'),
               ),
               _buildQuickWorkspaceItem(
                 context,
@@ -401,7 +410,7 @@ class HomeDashboard extends StatelessWidget {
                 Colors.indigo.withValues(alpha: 0.05),
                 Colors.indigo,
                 Icons.bedtime_outlined,
-                tr('Sleep Metric'),
+                tr('sleepMetric'),
               ),
             ],
           ),
@@ -411,7 +420,7 @@ class HomeDashboard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                tr('WORKSPACE SUMMARY'),
+                tr('workspaceSummary'),
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
@@ -421,7 +430,7 @@ class HomeDashboard extends StatelessWidget {
               GestureDetector(
                 onTap: () => onOpenLogger('symptoms'),
                 child: Text(
-                  tr('MANAGE'),
+                  tr('manage'),
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
@@ -441,7 +450,7 @@ class HomeDashboard extends StatelessWidget {
                 iconColor: Colors.indigo,
                 title: 'Sleep Metric',
                 value: sleepDisplay,
-                desc: 'Optimal Rest',
+                desc: tr('optimalRest'),
                 descColor: const Color(0xFF10B981),
               ),
               const SizedBox(height: 16),
@@ -450,7 +459,7 @@ class HomeDashboard extends StatelessWidget {
                 type: 'hydration',
                 icon: Icons.local_drink,
                 iconColor: Colors.blueAccent,
-                title: 'Hydration',
+                title: tr('hydration'),
                 value: waterDisplay,
                 customWidget: _buildWaterProgressBars(waterAmount),
               ),
@@ -460,9 +469,9 @@ class HomeDashboard extends StatelessWidget {
                 type: 'symptoms',
                 icon: Icons.sentiment_satisfied_alt,
                 iconColor: Colors.amber,
-                title: 'Mood Status',
+                title: tr('moodStatus'),
                 value: moodDisplay,
-                desc: 'Logged Today',
+                desc: tr('loggedToday'),
                 descColor: Colors.grey,
               ),
               const SizedBox(height: 16),

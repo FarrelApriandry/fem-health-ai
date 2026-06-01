@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'providers/fem_health_provider.dart';
 
 class ChatScreen extends StatefulWidget {
-  final String name;
-
-  const ChatScreen({super.key, this.name = 'there'});
+  const ChatScreen({super.key});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -20,10 +20,11 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    final name = context.read<FemHealthProvider>().profile.name;
     _messages.add({
       'role': 'ai',
       'text':
-          'Hi ${widget.name}! 👋 I am FemHealth AI. How can I help you today?',
+          'Hi ${name.isEmpty ? 'there' : name}! 👋 I am FemHealth AI. How can I help you today?',
     });
   }
 

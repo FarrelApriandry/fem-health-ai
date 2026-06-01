@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'models.dart';
+import 'providers/fem_health_provider.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  final Function(UserProfile) onComplete;
-
-  const OnboardingScreen({super.key, required this.onComplete});
+  const OnboardingScreen({super.key});
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -15,36 +15,6 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   int _step = 1;
   String _savingState = 'idle';
-
-  String _formatDate(DateTime date) {
-    final year = date.year.toString();
-    final month = date.month.toString().padLeft(2, '0');
-    final day = date.day.toString().padLeft(2, '0');
-    return '$year-$month-$day';
-  }
-
-  Future<void> _pickDate(
-    BuildContext context,
-    TextEditingController controller, {
-    required DateTime firstDate,
-    required DateTime lastDate,
-    DateTime? initialDate,
-  }) async {
-    FocusScope.of(context).unfocus();
-
-    final pickedDate = await showDatePicker(
-      context: context,
-      initialDate: initialDate ?? DateTime.now(),
-      firstDate: firstDate,
-      lastDate: lastDate,
-    );
-
-    if (pickedDate != null) {
-      setState(() {
-        controller.text = _formatDate(pickedDate);
-      });
-    }
-  }
 
   final _nameController = TextEditingController();
   final _fullNameController = TextEditingController();
@@ -93,89 +63,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
 
     Timer(const Duration(milliseconds: 1200), () {
+      if (!mounted) return;
       setState(() {
         _savingState = 'completed';
       });
 
-      Widget _buildDateField({
-        required String label,
-        required TextEditingController controller,
-        required VoidCallback onTap,
-        String? Function(String?)? validator,
-      }) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 6),
-            TextFormField(
-              controller: controller,
-              readOnly: true,
-              onTap: onTap,
-              validator: validator,
-              decoration: InputDecoration(
-                fillColor: Colors.white,
-                filled: true,
-                hintText: 'Select date',
-                suffixIcon: const Icon(Icons.calendar_today_outlined, size: 18),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: Colors.grey.withOpacity(0.2)),
-                ),
-              ),
-            ),
-          ],
-        );
-      }
-
-      String _formatDate(DateTime date) {
-        final year = date.year.toString();
-        final month = date.month.toString().padLeft(2, '0');
-        final day = date.day.toString().padLeft(2, '0');
-
-        return '$year-$month-$day';
-      }
-
-      Future<void> _pickDate(
-        BuildContext context,
-        TextEditingController controller, {
-        required DateTime firstDate,
-        required DateTime lastDate,
-        DateTime? initialDate,
-      }) async {
-        FocusScope.of(context).unfocus();
-
-        final pickedDate = await showDatePicker(
-          context: context,
-          initialDate: initialDate ?? DateTime.now(),
-          firstDate: firstDate,
-          lastDate: lastDate,
-        );
-
-        if (pickedDate != null) {
-          setState(() {
-            controller.text = _formatDate(pickedDate);
-          });
-        }
-      }
-
       Timer(const Duration(milliseconds: 500), () {
-        widget.onComplete(
+        if (!mounted) return;
+        context.read<FemHealthProvider>().onOnboardingComplete(
           UserProfile(
             name: _nameController.text.trim(),
             fullName: _fullNameController.text.trim(),
@@ -190,6 +85,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         );
       });
     });
+  }
+
+  Future<void> _pickDate(
+    BuildContext context,
+    TextEditingController controller, {
+    required DateTime firstDate,
+    required DateTime lastDate,
+    DateTime? initialDate,
+  }) async {
+    FocusScope.of(context).unfocus();
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate ?? DateTime.now(),
+      firstDate: firstDate,
+      lastDate: lastDate,
+    );
+
+    if (pickedDate != null) {
+      final year = pickedDate.year.toString();
+      final month = pickedDate.month.toString().padLeft(2, '0');
+      final day = pickedDate.day.toString().padLeft(2, '0');
+      setState(() {
+        controller.text = '$year-$month-$day';
+      });
+    }
   }
 
   @override

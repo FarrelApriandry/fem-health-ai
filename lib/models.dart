@@ -44,6 +44,30 @@ class UserProfile {
       periodLength: periodLength ?? this.periodLength,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'fullName': fullName,
+    'email': email,
+    'dob': dob,
+    'height': height,
+    'weight': weight,
+    'lastPeriodStart': lastPeriodStart,
+    'cycleLength': cycleLength,
+    'periodLength': periodLength,
+  };
+
+  factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
+    name: json['name'] ?? '',
+    fullName: json['fullName'] ?? '',
+    email: json['email'] ?? '',
+    dob: json['dob'] ?? '',
+    height: (json['height'] ?? 0).toDouble(),
+    weight: (json['weight'] ?? 0).toDouble(),
+    lastPeriodStart: json['lastPeriodStart'] ?? '',
+    cycleLength: json['cycleLength'] ?? 0,
+    periodLength: json['periodLength'] ?? 0,
+  );
 }
 
 class HydrationLog {
@@ -58,6 +82,20 @@ class HydrationLog {
     required this.time,
     required this.type,
   });
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'amount': amount,
+    'time': time,
+    'type': type,
+  };
+
+  factory HydrationLog.fromJson(Map<String, dynamic> json) => HydrationLog(
+    id: json['id'] ?? '',
+    amount: json['amount'] ?? 0,
+    time: json['time'] ?? '',
+    type: json['type'] ?? '',
+  );
 }
 
 class SleepLog {
@@ -72,6 +110,20 @@ class SleepLog {
     required this.quality,
     required this.totalMinutes,
   });
+
+  Map<String, dynamic> toJson() => {
+    'startTime': startTime,
+    'endTime': endTime,
+    'quality': quality,
+    'totalMinutes': totalMinutes,
+  };
+
+  factory SleepLog.fromJson(Map<String, dynamic> json) => SleepLog(
+    startTime: json['startTime'] ?? '',
+    endTime: json['endTime'] ?? '',
+    quality: json['quality'] ?? 'good',
+    totalMinutes: json['totalMinutes'] ?? 0,
+  );
 }
 
 class DailyLog {
@@ -115,6 +167,30 @@ class DailyLog {
       hydrationGoal: hydrationGoal ?? this.hydrationGoal,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'date': date,
+    'mood': mood,
+    'symptoms': symptoms,
+    'severity': severity,
+    'personalNotes': personalNotes,
+    'sleep': sleep?.toJson(),
+    'hydrationLogs': hydrationLogs?.map((e) => e.toJson()).toList(),
+    'hydrationGoal': hydrationGoal,
+  };
+
+  factory DailyLog.fromJson(Map<String, dynamic> json) => DailyLog(
+    date: json['date'] ?? '',
+    mood: json['mood'],
+    symptoms: (json['symptoms'] as List?)?.cast<String>() ?? const [],
+    severity: json['severity'] ?? 3,
+    personalNotes: json['personalNotes'] ?? '',
+    sleep: json['sleep'] != null ? SleepLog.fromJson(json['sleep']) : null,
+    hydrationLogs: (json['hydrationLogs'] as List?)
+        ?.map((e) => HydrationLog.fromJson(e))
+        .toList(),
+    hydrationGoal: json['hydrationGoal'] ?? 2500,
+  );
 }
 
 class NotificationSettings {
@@ -153,6 +229,30 @@ class NotificationSettings {
       symptomReminder: symptomReminder,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'periodReminder': periodReminder,
+    'periodDaysBefore': periodDaysBefore,
+    'periodTime': periodTime,
+    'ovulationReminder': ovulationReminder,
+    'hydrationReminder': hydrationReminder,
+    'hydrationInterval': hydrationInterval,
+    'sleepReminder': sleepReminder,
+    'sleepTime': sleepTime,
+    'symptomReminder': symptomReminder,
+  };
+
+  factory NotificationSettings.fromJson(Map<String, dynamic> json) => NotificationSettings(
+    periodReminder: json['periodReminder'] ?? true,
+    periodDaysBefore: json['periodDaysBefore'] ?? 2,
+    periodTime: json['periodTime'] ?? '09:00',
+    ovulationReminder: json['ovulationReminder'] ?? true,
+    hydrationReminder: json['hydrationReminder'] ?? true,
+    hydrationInterval: json['hydrationInterval'] ?? 'Every 2 hours',
+    sleepReminder: json['sleepReminder'] ?? true,
+    sleepTime: json['sleepTime'] ?? '21:30',
+    symptomReminder: json['symptomReminder'] ?? true,
+  );
 }
 
 enum AppLanguage { indonesia, english }
@@ -182,6 +282,25 @@ class AppSettings {
       pinCode: pinCode,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'language': language.name,
+    'theme': theme,
+    'pinLockEnabled': pinLockEnabled,
+    'biometricsEnabled': biometricsEnabled,
+    'pinCode': pinCode,
+  };
+
+  factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
+    language: AppLanguage.values.firstWhere(
+      (e) => e.name == json['language'],
+      orElse: () => AppLanguage.indonesia,
+    ),
+    theme: json['theme'] ?? 'light',
+    pinLockEnabled: json['pinLockEnabled'] ?? true,
+    biometricsEnabled: json['biometricsEnabled'] ?? true,
+    pinCode: json['pinCode'] ?? '1234',
+  );
 }
 
 class ChatMessage {

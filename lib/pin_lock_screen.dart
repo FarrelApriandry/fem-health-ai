@@ -1,16 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'providers/fem_health_provider.dart';
 
 class PINLockScreen extends StatefulWidget {
-  final String correctPin;
-  final VoidCallback onUnlock;
-  final bool biometricsEnabled;
-
-  const PINLockScreen({
-    super.key,
-    required this.correctPin,
-    required this.onUnlock,
-    required this.biometricsEnabled,
-  });
+  const PINLockScreen({super.key});
 
   @override
   State<PINLockScreen> createState() => _PINLockScreenState();
@@ -45,24 +38,32 @@ class _PINLockScreenState extends State<PINLockScreen> {
   }
 
   void _checkPin() {
-    if (_pin == widget.correctPin) {
+    final correctPin = context.read<FemHealthProvider>().settings.pinCode;
+    if (_pin == correctPin) {
       setState(() {
         _verified = true;
       });
-      Future.delayed(const Duration(milliseconds: 800), widget.onUnlock);
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) {
+          context.read<FemHealthProvider>().onUnlock();
+        }
+      });
     } else {
       Future.delayed(const Duration(milliseconds: 200), () {
-        setState(() {
-          _error = true;
-          _pin = '';
-        });
+        if (mounted) {
+          setState(() {
+            _error = true;
+            _pin = '';
+          });
+        }
       });
     }
   }
 
   void _triggerBiometrics() {
+    final correctPin = context.read<FemHealthProvider>().settings.pinCode;
     setState(() {
-      _pin = widget.correctPin;
+      _pin = correctPin;
     });
     _checkPin();
   }
@@ -70,6 +71,9 @@ class _PINLockScreenState extends State<PINLockScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final provider = context.watch<FemHealthProvider>();
+    final biometricsEnabled = provider.settings.biometricsEnabled;
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -186,7 +190,7 @@ class _PINLockScreenState extends State<PINLockScreen> {
                     itemCount: 12,
                     itemBuilder: (context, index) {
                       if (index == 9) {
-                        if (!widget.biometricsEnabled) return const SizedBox();
+                        if (!biometricsEnabled) return const SizedBox();
                         return IconButton(
                           onPressed: _triggerBiometrics,
                           icon: Icon(
@@ -210,7 +214,7 @@ class _PINLockScreenState extends State<PINLockScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Hint: default passcode is ${widget.correctPin}',
+                    'Hint: default passcode is ${provider.settings.pinCode}',
                     style: const TextStyle(
                       fontSize: 11,
                       color: Colors.grey,
