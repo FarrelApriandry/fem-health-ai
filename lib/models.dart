@@ -155,15 +155,18 @@ class NotificationSettings {
   }
 }
 
+enum AppLanguage { indonesia, english }
+
 class AppSettings {
-  String language; // "English" | "Indonesian"
-  String theme; // "light" | "dark"
+  AppLanguage language;
+
+  String theme;
   bool pinLockEnabled;
   bool biometricsEnabled;
   String pinCode;
 
   AppSettings({
-    this.language = 'English',
+    this.language = AppLanguage.indonesia,
     this.theme = 'light',
     this.pinLockEnabled = true,
     this.biometricsEnabled = true,

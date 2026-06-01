@@ -53,12 +53,7 @@ class _FemHealthAppState extends State<FemHealthApp> {
           totalMinutes: 495,
         ),
         hydrationLogs: [
-          HydrationLog(
-            id: '1',
-            amount: 500,
-            time: '08:00 AM',
-            type: 'Water',
-          ),
+          HydrationLog(id: '1', amount: 500, time: '08:00 AM', type: 'Water'),
         ],
       ),
     };
@@ -78,10 +73,7 @@ class _FemHealthAppState extends State<FemHealthApp> {
     });
   }
 
-  void _onUpdateSettings(
-    AppSettings app,
-    NotificationSettings notify,
-  ) {
+  void _onUpdateSettings(AppSettings app, NotificationSettings notify) {
     setState(() {
       _settings = app;
       _notifications = notify;
@@ -135,11 +127,7 @@ class _FemHealthAppState extends State<FemHealthApp> {
     });
   }
 
-  void _saveHydrationLog(
-    String date,
-    List<HydrationLog> logs,
-    int goal,
-  ) {
+  void _saveHydrationLog(String date, List<HydrationLog> logs, int goal) {
     setState(() {
       final existing = _dailyLogs[date];
 
@@ -165,10 +153,7 @@ class _FemHealthAppState extends State<FemHealthApp> {
       if (existing != null) {
         _dailyLogs[date] = existing.copyWith(sleep: sleep);
       } else {
-        _dailyLogs[date] = DailyLog(
-          date: date,
-          sleep: sleep,
-        );
+        _dailyLogs[date] = DailyLog(date: date, sleep: sleep);
       }
     });
   }
@@ -199,16 +184,15 @@ class _FemHealthAppState extends State<FemHealthApp> {
         onSurface: isDark ? Colors.white : const Color(0xFF09090B),
         shadow: Colors.black.withValues(alpha: 0.08),
       ),
-      scaffoldBackgroundColor:
-          isDark ? const Color(0xFF121212) : const Color(0xFFFAFAFA),
+      scaffoldBackgroundColor: isDark
+          ? const Color(0xFF121212)
+          : const Color(0xFFFAFAFA),
     );
 
     Widget activeScreen;
 
     if (!_isOnboarded) {
-      activeScreen = OnboardingScreen(
-        onComplete: _onOnboardingComplete,
-      );
+      activeScreen = OnboardingScreen(onComplete: _onOnboardingComplete);
     } else if (_isLocked && _settings.pinLockEnabled) {
       activeScreen = PINLockScreen(
         correctPin: _settings.pinCode,
@@ -318,6 +302,7 @@ class MainFrame extends StatelessWidget {
       case 'home':
         return HomeDashboard(
           profile: profile,
+          settings: settings,
           todayLog: todayLog,
           onOpenLogger: (type) => _openLogger(context, type),
           onNotifyTrigger: () => onTabChanged('profile'),
@@ -347,18 +332,12 @@ class MainFrame extends StatelessWidget {
           selectedDate: selectedDate,
           onSelectDate: onSelectDate,
           onOpenSymptomLogger: (date) {
-            _openLogger(
-              context,
-              'symptoms',
-              customDate: date,
-            );
+            _openLogger(context, 'symptoms', customDate: date);
           },
         );
 
       case 'chat':
-        return ChatScreen(
-          name: profile.name,
-        );
+        return ChatScreen(name: profile.name);
 
       case 'insights':
         return InsightsView(
@@ -427,10 +406,7 @@ class MainFrame extends StatelessWidget {
         children: [
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 6,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
               color: active ? const Color(0xFFFFDAD6) : Colors.transparent,
               borderRadius: BorderRadius.circular(16),
@@ -455,11 +431,7 @@ class MainFrame extends StatelessWidget {
     );
   }
 
-  void _openLogger(
-    BuildContext context,
-    String type, {
-    String? customDate,
-  }) {
+  void _openLogger(BuildContext context, String type, {String? customDate}) {
     final date = customDate ?? selectedDate;
     final log = dailyLogs[date] ?? DailyLog(date: date);
 
@@ -476,13 +448,7 @@ class MainFrame extends StatelessWidget {
             initialSeverity: log.severity,
             initialNotes: log.personalNotes,
             onSave: (dateStr, mood, symptoms, severity, notes) {
-              onSaveSymptomLog(
-                dateStr,
-                mood,
-                symptoms,
-                severity,
-                notes,
-              );
+              onSaveSymptomLog(dateStr, mood, symptoms, severity, notes);
               Navigator.pop(context);
             },
           );
@@ -491,11 +457,7 @@ class MainFrame extends StatelessWidget {
             initialLogs: log.hydrationLogs ?? [],
             initialGoal: log.hydrationGoal,
             onSave: (logs, goal) {
-              onSaveHydrationLog(
-                date,
-                logs,
-                goal,
-              );
+              onSaveHydrationLog(date, logs, goal);
               Navigator.pop(context);
             },
           );
@@ -518,9 +480,7 @@ class MainFrame extends StatelessWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return ObGynReportModal(
-          userProfile: profile,
-        );
+        return ObGynReportModal(userProfile: profile);
       },
     );
   }

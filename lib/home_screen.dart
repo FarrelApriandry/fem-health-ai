@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:fem_health/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'models.dart';
 
@@ -8,6 +9,7 @@ class HomeDashboard extends StatelessWidget {
   final Function(String) onOpenLogger;
   final VoidCallback onNotifyTrigger;
   final VoidCallback onMenuTrigger;
+  final AppSettings settings;
 
   const HomeDashboard({
     super.key,
@@ -16,7 +18,14 @@ class HomeDashboard extends StatelessWidget {
     required this.onOpenLogger,
     required this.onNotifyTrigger,
     required this.onMenuTrigger,
+    required this.settings,
   });
+  String tr(String key) {
+    return settings.language == AppLanguage.indonesia
+        ? AppStrings.id[key] ?? key
+        : AppStrings.en[key] ?? key;
+  }
+
   int _calculateCycleDay(UserProfile profile) {
     final lastPeriod = DateTime.tryParse(profile.lastPeriodStart);
 
@@ -358,8 +367,8 @@ class HomeDashboard extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          const Text(
-            'QUICK WORKSPACES',
+          Text(
+            tr('QUICK WORKSPACES'),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w800,
@@ -376,7 +385,7 @@ class HomeDashboard extends StatelessWidget {
                 Colors.purple.withValues(alpha: 0.05),
                 colors.primary,
                 Icons.favorite_border,
-                'Symptoms',
+                tr('Symptoms'),
               ),
               _buildQuickWorkspaceItem(
                 context,
@@ -392,7 +401,7 @@ class HomeDashboard extends StatelessWidget {
                 Colors.indigo.withValues(alpha: 0.05),
                 Colors.indigo,
                 Icons.bedtime_outlined,
-                'Sleep',
+                tr('Sleep Metric'),
               ),
             ],
           ),
@@ -401,8 +410,8 @@ class HomeDashboard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'WORKSPACE SUMMARY',
+              Text(
+                tr('WORKSPACE SUMMARY'),
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
@@ -412,7 +421,7 @@ class HomeDashboard extends StatelessWidget {
               GestureDetector(
                 onTap: () => onOpenLogger('symptoms'),
                 child: Text(
-                  'MANAGE',
+                  tr('MANAGE'),
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
