@@ -8,7 +8,7 @@ class FemHealthProvider extends ChangeNotifier {
   String _activeTab = 'home';
   bool _isOnboarded = false;
   bool _isLocked = true;
-  String _selectedDate = '2023-10-14';
+  String _selectedDate = _todayDate();
 
   late UserProfile _profile;
   late AppSettings _settings;
@@ -58,11 +58,16 @@ class FemHealthProvider extends ChangeNotifier {
         _dailyLogs = decoded.map((k, v) => MapEntry(k, DailyLog.fromJson(v)));
       }
 
-      _selectedDate = prefs.getString('selected_date') ?? '2023-10-14';
+      _selectedDate = prefs.getString('selected_date') ?? _todayDate();
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading from storage: $e');
     }
+  }
+
+  static String _todayDate() {
+    final now = DateTime.now();
+    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
   }
 
   Future<void> _saveToStorage() async {
@@ -71,7 +76,10 @@ class FemHealthProvider extends ChangeNotifier {
       await prefs.setBool('is_onboarded', _isOnboarded);
       await prefs.setString('profile', jsonEncode(_profile.toJson()));
       await prefs.setString('settings', jsonEncode(_settings.toJson()));
-      await prefs.setString('notifications', jsonEncode(_notifications.toJson()));
+      await prefs.setString(
+        'notifications',
+        jsonEncode(_notifications.toJson()),
+      );
       await prefs.setString(
         'daily_logs',
         jsonEncode(_dailyLogs.map((k, v) => MapEntry(k, v.toJson()))),
@@ -124,14 +132,23 @@ class FemHealthProvider extends ChangeNotifier {
     _saveToStorage();
   }
 
-  void updateSettings(AppSettings appSettings, NotificationSettings notifSettings) {
+  void updateSettings(
+    AppSettings appSettings,
+    NotificationSettings notifSettings,
+  ) {
     _settings = appSettings;
     _notifications = notifSettings;
     notifyListeners();
     _saveToStorage();
   }
 
-  void saveSymptomLog(String date, String mood, List<String> symptoms, int severity, String notes) {
+  void saveSymptomLog(
+    String date,
+    String mood,
+    List<String> symptoms,
+    int severity,
+    String notes,
+  ) {
     final existing = _dailyLogs[date];
     if (existing != null) {
       _dailyLogs[date] = existing.copyWith(
@@ -204,6 +221,7 @@ class FemHealthProvider extends ChangeNotifier {
         _isOnboarded = true;
         _isLocked = false;
         notifyListeners();
+        await _saveToStorage();
         return null;
       }
       return 'Login failed. Please check your credentials and try again.';
@@ -214,11 +232,35 @@ class FemHealthProvider extends ChangeNotifier {
     }
   }
 
-  /// Register new user via Supabase Auth and upsert profile row.
+  /// Register new user via Supabase Auth (email + password only).
   /// Returns error message string if failed, or null on success.
+  /// Does NOT upsert profile data - that's handled by updateProfileHealthData().
   Future<String?> registerWithEmail({
     required String email,
     required String password,
+  }) async {
+    try {
+      final client = Supabase.instance.client;
+      final response = await client.auth.signUp(
+        email: email,
+        password: password,
+      );
+
+      if (response.user != null) {
+        return null;
+      }
+      return 'Registration failed. Please try again.';
+    } on AuthException catch (e) {
+      return e.message;
+    } catch (e) {
+      return 'An unexpected error occurred: $e';
+    }
+  }
+
+  /// Update profile with health data and upsert to Supabase.
+  /// Called after user completes ProfileSetupScreen.
+  /// Returns error message string if failed, or null on success.
+  Future<String?> updateProfileHealthData({
     required String name,
     required String fullName,
     required String dob,
@@ -230,52 +272,40 @@ class FemHealthProvider extends ChangeNotifier {
   }) async {
     try {
       final client = Supabase.instance.client;
-      final response = await client.auth.signUp(
-        email: email,
-        password: password,
-        data: {
-          'name': name,
-          'full_name': fullName,
-        },
+      final userId = client.auth.currentUser?.id;
+
+      if (userId == null) {
+        return 'User not authenticated. Please log in again.';
+      }
+
+      await client.from('profiles').upsert({
+        'id': userId,
+        'email': client.auth.currentUser?.email,
+        'name': name,
+        'full_name': fullName,
+        'dob': dob,
+        'height': height,
+        'weight': weight,
+        'last_period_start': lastPeriodStart,
+        'cycle_length': cycleLength,
+        'period_length': periodLength,
+      });
+
+      _profile = UserProfile(
+        name: name,
+        fullName: fullName,
+        email: _profile.email,
+        dob: dob,
+        height: height,
+        weight: weight,
+        lastPeriodStart: lastPeriodStart,
+        cycleLength: cycleLength,
+        periodLength: periodLength,
       );
 
-      if (response.user != null) {
-        final userId = response.user!.id;
-
-        await client.from('profiles').upsert({
-          'id': userId,
-          'name': name,
-          'full_name': fullName,
-          'email': email,
-          'dob': dob,
-          'height': height,
-          'weight': weight,
-          'last_period_start': lastPeriodStart,
-          'cycle_length': cycleLength,
-          'period_length': periodLength,
-        });
-
-        _profile = UserProfile(
-          name: name,
-          fullName: fullName,
-          email: email,
-          dob: dob,
-          height: height,
-          weight: weight,
-          lastPeriodStart: lastPeriodStart,
-          cycleLength: cycleLength,
-          periodLength: periodLength,
-        );
-
-        _isOnboarded = true;
-        _isLocked = false;
-        await _saveToStorage();
-        notifyListeners();
-        return null;
-      }
-      return 'Registration failed. Please try again.';
-    } on AuthException catch (e) {
-      return e.message;
+      notifyListeners();
+      await _saveToStorage();
+      return null;
     } catch (e) {
       return 'An unexpected error occurred: $e';
     }

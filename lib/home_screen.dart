@@ -75,7 +75,10 @@ class HomeDashboard extends StatelessWidget {
     final provider = context.watch<FemHealthProvider>();
     final profile = provider.profile;
     final settings = provider.settings;
-    final todayLog = provider.getLogForDate('2023-10-14');
+    final today = DateTime.now();
+    final todayStr =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    final todayLog = provider.getLogForDate(todayStr);
 
     final lang = settings.language == AppLanguage.indonesia
         ? AppStrings.id
@@ -105,10 +108,7 @@ class HomeDashboard extends StatelessWidget {
         : '7h 30m';
 
     final waterAmount = todayLog.hydrationLogs != null
-        ? todayLog.hydrationLogs!.fold<int>(
-            0,
-            (sum, item) => sum + item.amount,
-          )
+        ? todayLog.hydrationLogs!.fold<int>(0, (sum, item) => sum + item.amount)
         : 1500;
     final waterDisplay = '${(waterAmount / 1000).toStringAsFixed(1)}L';
 

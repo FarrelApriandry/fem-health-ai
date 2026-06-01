@@ -24,7 +24,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _messages.add({
       'role': 'ai',
       'text':
-          'Hi ${name.isEmpty ? 'there' : name}! 👋 I am FemHealth AI. How can I help you today?',
+          'Halooo ${name.isEmpty ? 'there' : name}! 👋 Aku FemHealth AI. Bagaimana kabar kamu hari ini?',
     });
   }
 
@@ -115,7 +115,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                     ),
                     Text(
-                      'Your wellness companion',
+                      'Siap membantu kamu kapan saja! 🌸',
                       style: TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                   ],
@@ -171,7 +171,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 child: TextField(
                   controller: _controller,
                   decoration: const InputDecoration(
-                    hintText: 'Type a message...',
+                    hintText: 'Ayo bercerita...',
                     border: OutlineInputBorder(),
                   ),
                   onSubmitted: (_) => _sendMessage(),
