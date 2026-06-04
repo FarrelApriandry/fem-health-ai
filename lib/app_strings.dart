@@ -31,6 +31,15 @@ class AppStrings {
     'language': 'Bahasa',
     'indonesia': 'Indonesia',
     'english': 'Inggris',
+
+    // Partner
+    'partnerCode': 'Kode Pasangan',
+    'partnerConnect': 'Hubungkan Pasangan',
+    'sendRequest': 'Kirim Permintaan',
+    'pendingRequests': 'Permintaan Masuk',
+    'accept': 'Terima',
+    'reject': 'Tolak',
+    'partnerHealth': 'Kesehatan Pasangan',
   };
 
   static const en = {
@@ -65,5 +74,14 @@ class AppStrings {
     'language': 'Language',
     'indonesia': 'Indonesian',
     'english': 'English',
+
+    // Partner
+    'partnerCode': 'Partner Code',
+    'partnerConnect': 'Connect Partner',
+    'sendRequest': 'Send Request',
+    'pendingRequests': 'Pending Requests',
+    'accept': 'Accept',
+    'reject': 'Reject',
+    'partnerHealth': 'Partner Health',
   };
 }

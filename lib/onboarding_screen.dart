@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/fem_health_provider.dart';
+import 'partner_invite_screen.dart';
 import 'profile_setup_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -15,6 +16,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _step = 1;
   bool _isLoginMode = false;
   bool _isAuthLoading = false;
+  String _selectedRole = 'utama';
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -438,7 +440,49 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 32),
+                    // ── Role Selection (hanya untuk Register) ──
+                    if (!_isLoginMode) ...[
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 4.0),
+                        child: Divider(color: Colors.black12),
+                      ),
+                      Text(
+                        'Your Role',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: colors.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Are you the primary user or a partner?',
+                        style: TextStyle(fontSize: 13, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 12),
+                      SegmentedButton<String>(
+                        segments: const [
+                          ButtonSegment(
+                            value: 'utama',
+                            label: Text('Utama (Primary)'),
+                            icon: Icon(Icons.person),
+                          ),
+                          ButtonSegment(
+                            value: 'pasangan',
+                            label: Text('Pasangan (Partner)'),
+                            icon: Icon(Icons.people),
+                          ),
+                        ],
+                        selected: {_selectedRole},
+                        onSelectionChanged: (value) {
+                          setState(() => _selectedRole = value.first);
+                        },
+                        style: ButtonStyle(
+                          visualDensity: VisualDensity.comfortable,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
                     ElevatedButton(
                       onPressed: _isAuthLoading ? null : _handleAuth,
                       style: ElevatedButton.styleFrom(
@@ -572,11 +616,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         return;
       }
 
-      // Registration success — navigate to ProfileSetupScreen
+      // Registration success — route based on role selection
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const ProfileSetupScreen()),
-      );
+      if (_selectedRole == 'pasangan') {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const PartnerInviteScreen()),
+        );
+      } else {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const ProfileSetupScreen()),
+        );
+      }
     }
   }
 

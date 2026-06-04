@@ -79,6 +79,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       lastPeriodStart: _lastPeriodController.text.trim(),
       cycleLength: int.tryParse(_cycleLengthController.text.trim()) ?? 0,
       periodLength: int.tryParse(_periodLengthController.text.trim()) ?? 0,
+      role: 'utama',
     );
 
     if (!mounted) return;
@@ -211,8 +212,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 16),
                       const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16.0),
+                        padding: EdgeInsets.symmetric(vertical: 8.0),
                         child: Divider(color: Colors.black12),
                       ),
                       Text(
@@ -374,11 +376,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+              borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.grey.withOpacity(0.2)),
+              borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
             ),
           ),
         ),
@@ -420,11 +422,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+              borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.grey.withOpacity(0.2)),
+              borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
             ),
           ),
         ),

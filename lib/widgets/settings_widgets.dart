@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models.dart';
 import '../providers/fem_health_provider.dart';
 import 'package:provider/provider.dart';
@@ -667,6 +668,243 @@ class ProfileView extends StatelessWidget {
               ],
             ),
           ),
+          // ── Partner Code Section ──
+          const SizedBox(height: 24),
+          const Text(
+            'PARTNER CONNECTION',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+              letterSpacing: 1.0,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: colors.primary.withValues(alpha: 0.08),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.share, color: colors.primary, size: 20),
+                    ),
+                    const SizedBox(width: 16),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Your Partner Code',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Share this code with your partner',
+                            style: TextStyle(fontSize: 11, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.primary.withValues(alpha: 0.04),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: colors.primary.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        profile.partnerCode.isNotEmpty
+                            ? profile.partnerCode
+                            : 'Not available',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 2,
+                          color: colors.primary,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.copy, size: 20),
+                        onPressed: () {
+                          if (profile.partnerCode.isNotEmpty) {
+                            Clipboard.setData(
+                              ClipboardData(text: profile.partnerCode),
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Partner code copied!'),
+                                behavior: SnackBarBehavior.floating,
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // ── PENDING PARTNER REQUESTS Section ──
+          if (provider.pendingRequests.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            const Text(
+              'PENDING PARTNER REQUESTS',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+                letterSpacing: 1.0,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...provider.pendingRequests.map((req) {
+              final senderName =
+                  provider.pendingRequestSenders[req.id] ?? 'Unknown';
+              final timeAgo = _timeAgo(req.createdAt);
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: Colors.grey.withValues(alpha: 0.15),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 20,
+                      backgroundColor: colors.primary.withValues(alpha: 0.08),
+                      child: Icon(
+                        Icons.person_outline,
+                        color: colors.primary,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            senderName,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'Requested $timeAgo',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => _handleAccept(context, req.id),
+                      child: const Text('Accept'),
+                    ),
+                    TextButton(
+                      onPressed: () => _handleReject(context, req.id),
+                      child: Text(
+                        'Reject',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+          // ── ACTIVE PARTNER Section ──
+          if (provider.activeConnection != null) ...[
+            const SizedBox(height: 24),
+            const Text(
+              'CONNECTED PARTNER',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+                letterSpacing: 1.0,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Connected with Partner',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Partner can view your cycle data',
+                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
           const Text(
             'SETTINGS & SECURITY',
@@ -756,6 +994,92 @@ class ProfileView extends StatelessWidget {
     );
   }
 
+  String _timeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final diff = now.difference(dateTime);
+    if (diff.inMinutes < 60) {
+      return '${diff.inMinutes} minutes ago';
+    } else if (diff.inHours < 24) {
+      return '${diff.inHours} hours ago';
+    } else {
+      return '${diff.inDays} days ago';
+    }
+  }
+
+  void _handleAccept(BuildContext context, String connectionId) {
+    final provider = context.read<FemHealthProvider>();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Accept Partner Request'),
+        content: const Text(
+          'Are you sure you want to accept this partner request? Your cycle data will be shared with this partner.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final error = await provider.acceptPartnerRequest(connectionId);
+              if (error != null && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(error),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+              // Re-check pending to refresh the list
+              await provider.checkPendingRequests();
+            },
+            child: const Text('Accept', style: TextStyle(color: Colors.green)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleReject(BuildContext context, String connectionId) {
+    final provider = context.read<FemHealthProvider>();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Reject Partner Request'),
+        content: const Text(
+          'Are you sure you want to reject this partner request?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final error = await provider.rejectPartnerRequest(connectionId);
+              if (error != null && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(error),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+              await provider.checkPendingRequests();
+            },
+            child: const Text(
+              'Reject',
+              style: TextStyle(color: Colors.redAccent),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildProfileDetailRow(String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -835,14 +1159,10 @@ class _EditProfileModalState extends State<EditProfileModal> {
     _emailController = TextEditingController(text: profile.email);
     _dobController = TextEditingController(text: profile.dob);
     _heightController = TextEditingController(
-      text: profile.height == 0.0
-          ? ''
-          : profile.height.toInt().toString(),
+      text: profile.height == 0.0 ? '' : profile.height.toInt().toString(),
     );
     _weightController = TextEditingController(
-      text: profile.weight == 0.0
-          ? ''
-          : profile.weight.toInt().toString(),
+      text: profile.weight == 0.0 ? '' : profile.weight.toInt().toString(),
     );
     _lastPeriodController = TextEditingController(
       text: profile.lastPeriodStart,
