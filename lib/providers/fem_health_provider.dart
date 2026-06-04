@@ -241,6 +241,8 @@ class FemHealthProvider extends ChangeNotifier {
         _isOnboarded = true;
         _isLocked = false;
         await _loadActiveConnection();
+        await checkPendingRequests();
+        await fetchPartnerLogs();
         notifyListeners();
         await _saveToStorage();
         return null;
@@ -398,8 +400,8 @@ class FemHealthProvider extends ChangeNotifier {
           .from('partner_connections')
           .select()
           .or(
-            'and(sender_id.eq.$currentUserId,receiver_id.eq.$receiverId),'
-            'and(sender_id.eq.$receiverId,receiver_id.eq.$currentUserId)',
+            'and(requester_id.eq.$currentUserId,receiver_id.eq.$receiverId),'
+            'and(requester_id.eq.$receiverId,receiver_id.eq.$currentUserId)',
           )
           .maybeSingle();
 
@@ -416,11 +418,9 @@ class FemHealthProvider extends ChangeNotifier {
 
       // ── Insert new connection ──
       await client.from('partner_connections').insert({
-        'sender_id': currentUserId,
+        'requester_id': currentUserId,
         'receiver_id': receiverId,
         'status': 'pending',
-        'sender_code': _profile.partnerCode,
-        'receiver_code': targetCode.trim(),
       });
 
       debugPrint('Partner request sent to user: $receiverId');
@@ -457,7 +457,7 @@ class FemHealthProvider extends ChangeNotifier {
         final senderProfile = await client
             .from('profiles')
             .select('name, full_name')
-            .eq('id', req.senderId)
+            .eq('id', req.requesterId)
             .maybeSingle();
 
         if (senderProfile != null) {
@@ -615,7 +615,7 @@ class FemHealthProvider extends ChangeNotifier {
           .from('partner_connections')
           .select()
           .or(
-            'and(sender_id.eq.$currentUserId,status.eq.accepted),'
+            'and(requester_id.eq.$currentUserId,status.eq.accepted),'
             'and(receiver_id.eq.$currentUserId,status.eq.accepted)',
           )
           .maybeSingle();
@@ -635,10 +635,10 @@ class FemHealthProvider extends ChangeNotifier {
   String? _getPartnerUserId(String currentUserId) {
     if (_activeConnection == null) return null;
 
-    if (_activeConnection!.senderId == currentUserId) {
+    if (_activeConnection!.requesterId == currentUserId) {
       return _activeConnection!.receiverId;
     } else if (_activeConnection!.receiverId == currentUserId) {
-      return _activeConnection!.senderId;
+      return _activeConnection!.requesterId;
     }
     return null;
   }

@@ -318,31 +318,25 @@ class AppSettings {
 
 class PartnerConnection {
   final String id;
-  final String senderId;
+  final String requesterId;
   final String receiverId;
   final String status; // 'pending' | 'accepted' | 'rejected'
-  final String? senderCode;
-  final String? receiverCode;
   final DateTime createdAt;
 
   PartnerConnection({
     required this.id,
-    required this.senderId,
+    required this.requesterId,
     required this.receiverId,
     required this.status,
-    this.senderCode,
-    this.receiverCode,
     required this.createdAt,
   });
 
   factory PartnerConnection.fromJson(Map<String, dynamic> json) =>
       PartnerConnection(
         id: json['id'] ?? '',
-        senderId: json['sender_id'] ?? '',
+        requesterId: json['requester_id'] ?? '',
         receiverId: json['receiver_id'] ?? '',
         status: json['status'] ?? 'pending',
-        senderCode: json['sender_code'],
-        receiverCode: json['receiver_code'],
         createdAt: json['created_at'] != null
             ? DateTime.parse(json['created_at'])
             : DateTime.now(),
@@ -350,11 +344,9 @@ class PartnerConnection {
 
   Map<String, dynamic> toJson() => {
     'id': id,
-    'sender_id': senderId,
+    'requester_id': requesterId,
     'receiver_id': receiverId,
     'status': status,
-    'sender_code': senderCode,
-    'receiver_code': receiverCode,
     'created_at': createdAt.toIso8601String(),
   };
 }
